@@ -2,14 +2,14 @@
 
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { action } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import jwt from "jsonwebtoken";
 
-import { scrypt, randomBytes } from "crypto";
-import { promisify } from "util";
+import crypto from "crypto";
+
 import { Id } from "./_generated/dataModel";
 
-export const authenticateUser = action({
+export const authenticateUser = internalAction({
   args: { username: v.string(), password: v.string() },
   handler: async (ctx, { username, password }) => {
     const user = await ctx.runQuery(internal.user.getByUsername, {
@@ -31,10 +31,8 @@ export const authenticateUser = action({
         }
       );
 
-      // Calculate expiration date for the session, e.g., 24 hours from now
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
-      // Create a new session in the database
       const sessionId: Id<"session"> = await ctx.runMutation(
         internal.sessions.createSession,
         {
@@ -50,37 +48,13 @@ export const authenticateUser = action({
   },
 });
 
-const scryptAsync = promisify(scrypt);
+async function verifyPassword(password: string, hashedPassword: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
-export const createUser = action({
-  args: {
-    username: v.string(),
-    password: v.string(),
-    email: v.string(),
-  },
-  handler: async (ctx, { username, password, email }) => {
-    // Generate a salt
-    const salt = randomBytes(16).toString("hex");
-    // Hash the password using the salt
-    const hashedBuffer = (await scryptAsync(password, salt, 64)) as Buffer;
-    const hashedPassword = `${salt}.${hashedBuffer.toString("hex")}`;
-
-    // Insert the new user record into the database
-    const newUser = await ctx.runMutation(internal.user.createUser, {
-      username,
-      hashedPassword,
-      email,
-    });
-  },
-});
-
-async function verifyPassword(
-  password: string,
-  hashedPassword: string
-): Promise<boolean> {
-  // Extract the salt from the stored hashedPassword
-  const [salt, storedHash] = hashedPassword.split(".");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-
-  return buf.toString("hex") === storedHash;
+  return hashHex === hashedPassword;
 }

@@ -12,6 +12,7 @@ importers:
       '@typescript-eslint/eslint-plugin': ^7.2.0
       '@typescript-eslint/parser': ^7.2.0
       '@vitejs/plugin-react-swc': ^3.5.0
+      backend: workspace:*
       eslint: ^8.57.0
       eslint-plugin-react-hooks: ^4.6.0
       eslint-plugin-react-refresh: ^0.4.6
@@ -20,6 +21,7 @@ importers:
       typescript: ^5.2.2
       vite: ^5.2.0
     dependencies:
+      backend: link:../../libs/backend
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
     devDependencies:
