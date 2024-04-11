@@ -309,6 +309,11 @@
       "packageName": "backend",
       "projectFolder": "libs/backend",
       "shouldPublish": false
+    },
+    {
+      "packageName": "frontend",
+      "projectFolder": "apps/frontend",
+      "shouldPublish": false
     }
     // {
     //   /**
